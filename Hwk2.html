@@ -1,0 +1,294 @@
+
+<!-- saved from url=(0057)https://heather.cs.ucdavis.edu/~matloff/172/Hwk/Hwk2.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252"></head><body><h1>Homework 2</h1>
+
+<h2>Due Monday, February 7, 11:59 pm</h2>
+
+<h2>Submission Rules and Advice</h2>
+
+<p>
+In this homework, you are asked to write up a report on what you did,
+why you did it, and what the results were.  Your writeup must be in
+LaTeX.  Include your <b>.tex</b> and <b>.pdf</b> files, as well as any
+image files, in your submission, along with your R files.  Images must
+be generated in R, and the associated code included.
+</p>
+
+<p>
+In this and subsequent assignments, you are required to use 
+<a href="https://heather.cs.ucdavis.edu/~matloff/172/Hwk/github.com/matloff/qeML">qeML</a> for all basic
+prediction operations (linear model, RFs, etc.).  For matrix
+factorization (coming soon(, use <b>rectools</b>.
+</p>
+
+<p>
+As before, if asked to write a <i>general</i> function, its code cannot
+be tailored to MovieLens,say. 
+</p>
+
+<h2>Problem 1</h2>
+
+<p>
+As promised, this is a "gentler" version of the original Problem 1.
+</p>
+
+<p>
+Develop a class <b>'virtualRatings'</b> via which users (i.e. those who
+write code using this class)  will have the illusion that they are
+accessing a physical ratings matrix stored in memory.  This illusion
+will come from the fact that they access the ratings in the typical
+"a[i,j]" fashion.  Here are the details:
+</p>
+
+<ul>
+
+<li> The data will be read-only and uncached.
+</li> <p></p> 
+
+<li> The class will have just one component, <b>inputDf</b>, which will
+also be the sole argument of the constructor function,
+<b>virtualRatings()</b>.
+</li> <p></p>
+
+<li> The <b>inputDf</b> argument will be a 3-column matrix/data frame in
+the usual (userID, itemID, rating) format.
+</li> <p></p> 
+
+<li> In a[i,j], there will be exactly one i and exactly one j; e.g.
+a[5,] is not allowed.
+</li> <p></p> 
+
+<li> The return value to <b>`[.virtualRatings()`</b> will be the rating 
+that the specified user gave to the specified item.  If there is none,
+NA is returned.  If there is more than one, the first instance will be
+returned, but the function will also call the built-in R function
+<b>warning()</b> with an appropriate message.
+</li> <p></p> 
+
+</ul>
+
+<p>
+Example:
+</p>
+
+<pre>&gt; iDF &lt;- rbind(c(2,5,1),c(3,5,4),c(2,5,2),c(6,1,5))
+&gt; iDF
+     [,1] [,2] [,3]
+[1,]    2    5    1
+[2,]    3    5    4
+[3,]    2    5    2
+[4,]    6    1    5
+&gt; ex &lt;- virtualRatings(iDF)
+&gt; ex
+$inputDF
+     [,1] [,2] [,3]
+[1,]    2    5    1
+[2,]    3    5    4
+[3,]    2    5    2
+[4,]    6    1    5
+
+attr(,"class")
+[1] "virtualRatings"
+
+&gt; ex[3,5]
+[1] 4
+&gt; ex[5,5]
+[1] NA
+&gt; ex[2,5]
+[1] 1
+Warning message:
+In `[.virtualRatings`(ex, 2, 5) : muliple instances found
+</pre>
+
+<h2>Problem 2</h2>
+
+<p>
+Apply collaborative filtering to the following datasets:
+</p>
+
+<ul>
+
+<li> MovieLens, 100K version, as we have been using.
+</li> <p></p>
+
+<li> InstEval, included with <b>rectools</b>.  Use v.1.0.7, calling
+<b>getInstEval()</b>.
+</li> <p></p>
+
+<li> 
+<a href="https://archive.ics.uci.edu/ml/datasets/congressional+voting+records">
+House Voting,</a> 
+from the UCI Machine Learning Repository.  Here the "users" are Members
+of Congress, the "items" are bills, and the "ratings" are Yes or No
+votes.  Not every MC voted on every bill, so it's a classical collaborative
+filtering problem.
+<p></p>
+
+<b>Note carefully:</b> You must first convert the data to (user ID, item
+ID, rating, side information format.  Make sure to include your code for
+this, as well as a test for a couple of cases.
+</li> <p></p> 
+
+</ul>
+
+<p>
+</p>
+
+<p>
+Here you will use only linear or logistic models, but you definitely are
+allowed to use side information (including generating new variables from
+the original data).  See how well you can do!
+</p>
+
+<p>
+But keep in mind that we are working with limited data, both in size and in
+richness of information.  Results will likely be modest.
+</p>
+
+<h2>Extra Credit</h2>
+
+<p>
+Let A denote the ratings matrix, r x s, for r users and s items.  Keep
+in mind that r might be, say, in the hundreds of millions, and s in the
+hundreds of thousands.  The product rs could be huge!  We probably don't
+want to store it in memory, and maybe not even on disk.
+</p>
+
+<p>
+One solution is to generate the elements of A on demand, keeping a cache
+of the ones requested so far.  Of course, this could be quite
+sophisticated, but we will keep it simple here.
+</p>
+
+<ul>
+
+<li> You will develop an R S3 class <b>'ratingsCache'</b>.  
+</li> <p></p> 
+
+<li> 
+
+There are many tutorials on S3. <a href="https://www.r-bloggers.com/2019/05/simple-yet-elegant-object-oriented-programming-in-r-with-s3/">Here</a>
+is one by someone I highly respect.  R also offers more advanced OOP
+with S4 and R6 classes, but we will use S3, preferred by many, maybe
+most, serious R developers.  In brief:  To create an S3 class, one makes an R
+list with the desired components, then bestows a class name on that
+list.  
+
+<p></p>
+
+<p>
+One can do operator overloading in S3 on R generic functions, e.g.
+create a class <b>'abc'</b> and then define <b>plot.abc()</b>.  Whenever
+<b>plot()</b> is called on an object of this class, the call will be
+dispatched to this function.
+</p>
+
+<p>
+Note that "In R, everything is an object, and all operations 
+are functions," e.g. +:
+</p>
+
+<pre>&gt; 3+8
+[1] 11
+&gt; '+'(3,8)
+[1] 11
+</pre>
+
+<p>
+Operations can thus be overloaded:
+</p>
+
+<pre>&gt; u &lt;- list(v=2)
+&gt; class(u) &lt;- 'abc'
+&gt; v &lt;- list(v=5)
+&gt; class(v) &lt;- 'abc'
+&gt; '+.abc' &lt;- function(a,b) a$v * b$v
+&gt; u + v
+[1] 10
+</pre>
+
+</li><li> 
+Assume the user and item IDs start at 1 and are consecutive, but the
+code will be otherwise general.
+</li> <p></p> 
+
+<li> The class will consist of these components:
+<p></p>
+
+   <ul>
+
+   <li> <b>inputDF:</b> Data frame consisting of user ID, item ID,
+   rating and possible side information (latter not directly used here).
+   </li> <p></p> 
+
+   <li> <b>Aij:</b> These are the cached values.  Every time a query is
+   made on the ratings matrix, <b>Aij</b> will be checked first.  If
+   present, the cached value is returned.  Otherwise, it is determined
+   (by going through the input file), added to the cache, and returned;
+   if the rating is not in the input file, NA is returned.
+   </li> <p></p> 
+
+   </ul>
+
+</li><li> 
+<b>Aij</b> will be an R list, element <b>i</b> of which will be a
+vector of all the cached values for user <b>i</b>.  The
+vector will have its elements named according to the ID of item
+<b>j</b>.
+</li> <p></p> 
+
+<li> 
+For instance, say <b>Aij[['3']]['8'] = 2</b>.  That means that user 3 has
+given item 8 a rating of 2.  It also means that there has previously
+been a query for this <b>i</b> and <b>j</b>.
+</li> <p></p> 
+
+<li>
+<b>Aij[['k']]</b> won't exist until the first query for user <b>k</b>
+comes in.  Similarly, <b>Aij[['k']]['m']</b> won't exist 
+until the rating for that user-item combination is queried.
+</li> <p></p> 
+
+<li> You will overload the R subscripting operator!  Use this kind of
+approach:
+<p></p>
+
+<pre>&gt; w &lt;- rbind(1:3,6:8)
+&gt; w[2,1]
+[1] 6
+&gt; '['(w,2,1)
+[1] 6
+
+&gt; a &lt;- list(x=3, y=8)
+&gt; class(a) &lt;- 'z'
+&gt; '[.z' &lt;- function(obj,i,j) i*obj$x - j*obj$y
+&gt; a[1,3]
+[1] -21
+</pre>
+
+</li><li> Include a function named <b>ratingsCache()</b> that acts as a
+constructor.  It will:  create an R list that will serve as the class
+object; set the <b>inputDF</b> component of that list to the input data
+frame (e.g. <b>ml100)</b>; initialize <b>Aij</b> to NULL;
+and bestow the class name.  
+</li> <p></p> 
+
+<li> Include code where you demonstrate the above on the MovieLens data:
+You create an instance <b>ml</b> of the class from the MovieLens data, then do,
+say,
+<p></p>
+
+<pre>&gt; ml[196,242]  # should return 3
+&gt; ml[244,51]  # should return 2
+</pre>
+
+<p>
+Remember, the point is to give the illusion that we are actually
+accessing the matrix in memory!
+</p>
+
+</li> <p></p>
+
+</ul>
+
+</body></html>
